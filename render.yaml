@@ -1,0 +1,43 @@
+# One-command deploy on Render.
+# Push to GitHub, then New + Blueprint on render.com and point it at this file.
+services:
+  - type: web
+    name: skill-swap-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: skillswap
+      - key: ALLOWED_EMAIL_DOMAIN
+        value: anurag.edu.in
+      - key: AI_PROVIDER
+        value: none
+  - type: web
+    name: skill-swap-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false

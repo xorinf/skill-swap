@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# build
+frontend/dist/
+backend/dist/
+
+# env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store
+
+# editors
+.vscode/
+.idea/
+
+# misc
+.mongo-data/
