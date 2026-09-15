@@ -3,7 +3,7 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 import { attachIo } from '../services/notifyService.js';
-import Conversation from '../models/Conversation.js';
+import { Conversation } from '../models/Conversation.js';
 
 const userRoom = (id) => `user:${id}`;
 const userSockets = new Map(); // userId -> Set<socketId>
