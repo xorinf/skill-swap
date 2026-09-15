@@ -28,12 +28,22 @@ export function attachSockets(httpServer) {
     }
   });
 
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     const uid = socket.userId;
     socket.join(userRoom(uid));
     if (!userSockets.has(uid)) userSockets.set(uid, new Set());
     userSockets.get(uid).add(socket.id);
     io.emit('presence:update', { userId: uid, online: true });
+
+    // Auto-join rooms for every conversation this user participates in.
+    // Lets `socket.to(conversationId).emit(...)` actually reach the other participant.
+    try {
+      const Conversation = (await import('../models/Conversation.js')).default;
+      const convs = await Conversation.find({ participants: uid }, { _id: 1 }).lean();
+      for (const c of convs) socket.join(String(c._id));
+    } catch (err) {
+      console.error('[ws] failed to auto-join conversation rooms:', err.message);
+    }
 
     socket.on('disconnect', () => {
       const set = userSockets.get(uid);

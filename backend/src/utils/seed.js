@@ -4,6 +4,7 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { connectDB } from '../config/db.js';
+import { expand } from './seedExpansion.js';
 import User from '../models/User.js';
 import { Post, Comment } from '../models/Post.js';
 import { SwapRequest, Session, Review, CreditTxn } from '../models/SwapRequest.js';
@@ -722,7 +723,12 @@ async function main() {
       body: 'You have taught 8 sessions.', data: {} }
   ]);
 
-  console.log(`[seed] done → users: ${users.length}, posts: 15, help requests: 5, swap requests: 7 (1 incoming pending, 1 sent pending, 1 in_progress, 2 upcoming, 2 completed, 1 cancelled), 2 past verified sessions with reviews`);
+  console.log(`[seed] anchors done → users: ${users.length}, posts: 15, help requests: 5, swap requests: 7 (1 incoming pending, 1 sent pending, 1 in_progress, 2 upcoming, 2 completed, 1 cancelled), 2 past verified sessions with reviews`);
+
+  // Procedurally expand the cohort to ~100+ users with realistic surrounding data
+  const summary = await expand(80);
+  console.log(`[seed] expansion done → ${JSON.stringify(summary)}`);
+
   await mongoose.disconnect();
 }
 
