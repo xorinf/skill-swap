@@ -3,6 +3,7 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
 import { attachIo } from '../services/notifyService.js';
+import Conversation from '../models/Conversation.js';
 
 const userRoom = (id) => `user:${id}`;
 const userSockets = new Map(); // userId -> Set<socketId>
@@ -38,7 +39,6 @@ export function attachSockets(httpServer) {
     // Auto-join rooms for every conversation this user participates in.
     // Lets `socket.to(conversationId).emit(...)` actually reach the other participant.
     try {
-      const Conversation = (await import('../models/Conversation.js')).default;
       const convs = await Conversation.find({ participants: uid }, { _id: 1 }).lean();
       for (const c of convs) socket.join(String(c._id));
     } catch (err) {
