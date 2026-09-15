@@ -25,7 +25,16 @@ export function createApp() {
 
   app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: config.clientUrl, credentials: true }));
+  app.use(cors({
+    origin: (origin, cb) => {
+      // allow same-origin / curl / mobile (no Origin header)
+      if (!origin) return cb(null, true);
+      if (config.allowedOrigins.includes(origin)) return cb(null, true);
+      if (config.allowedOrigins.includes('*')) return cb(null, true);
+      return cb(null, false);
+    },
+    credentials: true
+  }));
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
   if (config.nodeEnv !== 'test') app.use(morgan('dev'));

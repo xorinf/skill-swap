@@ -10,6 +10,8 @@ export const config = {
   port: Number(process.env.PORT || 5000),
   nodeEnv: process.env.NODE_ENV || 'development',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  allowedOrigins: (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',').map(s => s.trim()).filter(Boolean),
   mongoUri: required('MONGO_URI', 'mongodb://127.0.0.1:27017/skillswap'),
   jwtSecret: required('JWT_SECRET', 'dev-secret-change-me'),
   jwtExpires: process.env.JWT_EXPIRES || '7d',

@@ -9,7 +9,7 @@ const userSockets = new Map(); // userId -> Set<socketId>
 
 export function attachSockets(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: config.clientUrl, credentials: true }
+    cors: { origin: config.allowedOrigins, credentials: true }
   });
   attachIo(io);
 
