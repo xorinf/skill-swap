@@ -99,6 +99,12 @@ router.post('/session/:id/verify-otp', validate(z.object({ code: z.string().leng
   if (s.otp.code !== req.body.code) badRequest('Wrong code');
 
   if (!s.verifiedBy.find((x) => String(x) === me)) s.verifiedBy.push(req.user._id);
+  // The issuer already saw the code at issue time — count them as confirmed too,
+  // so the other side doesn't need to re-enter a code they never received.
+  if (s.otp.issuedBy && String(s.otp.issuedBy) !== me) {
+    const issuer = String(s.otp.issuedBy);
+    if (!s.verifiedBy.find((x) => String(x) === issuer)) s.verifiedBy.push(s.otp.issuedBy);
+  }
   await s.save();
 
   if (s.verifiedBy.length >= 2) {

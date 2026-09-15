@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { authRequired } from '../../middleware/auth.js';
 import { SwapRequest, Session } from '../../models/SwapRequest.js';
 import { Conversation } from '../../models/Conversation.js';
+import User from '../../models/User.js';
 import { ok, created, badRequest, notFound, forbidden, conflict } from '../../utils/response.js';
 import { validate } from '../../middleware/validate.js';
 import { notify } from '../../services/notifyService.js';
@@ -163,6 +164,12 @@ router.post('/:id/cancel', async (req, res) => {
   sr.status = 'cancelled';
   sr.cancelledBy = req.user._id;
   await sr.save();
+  // Cascade: cancel the linked session so My Matches stops surfacing it.
+  if (sr.session) {
+    await Session.updateOne({ _id: sr.session }, { $set: { status: 'cancelled' } });
+  }
+  // Bump the canceller's sessionsCancelled for trust score.
+  await User.updateOne({ _id: req.user._id }, { $inc: { sessionsCancelled: 1 } });
   const other = String(sr.requester) === me ? sr.recipient : sr.requester;
   await notify(other, { type: 'swap_cancelled', title: 'Swap cancelled', body: '', data: { swapRequest: sr._id } });
   return ok(res, { swapRequest: sr });

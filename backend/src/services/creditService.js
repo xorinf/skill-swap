@@ -6,16 +6,20 @@ const TEACHER_EARN = 1;
 const LEARNER_SPEND = 1;
 
 export async function settleCredits(session) {
-  if (session.creditSettled) return false;
-  // Idempotency: skip if already settled
-  const sessionId = session._id;
+  // Atomic gate: only the first caller whose update lands will run settlement.
+  // Stops double-credit/double-debit when both sides click "verify" at once.
+  const claimed = await Session.findOneAndUpdate(
+    { _id: session._id, creditSettled: { $ne: true } },
+    { $set: { creditSettled: true } },
+    { new: true }
+  );
+  if (!claimed) return false;
+  // Re-read with the session the caller passed (already populated enough for our needs).
+  const sessionId = claimed._id;
 
-  const teacher = await User.findById(session.teacher);
-  const learner = await User.findById(session.learner);
+  const teacher = await User.findById(claimed.teacher);
+  const learner = await User.findById(claimed.learner);
   if (!teacher || !learner) throw new Error('Users missing for session');
-
-  // ponytail: simple sequential updates. For strict concurrency use Mongo transactions
-  // on a replica set; we use a flag + early-return guard instead, which is enough for MVP.
 
   teacher.timeCredits += TEACHER_EARN;
   teacher.sessionsAttended += 1;
@@ -25,14 +29,11 @@ export async function settleCredits(session) {
     type: 'session_earned_teach',
     amount: TEACHER_EARN,
     balanceAfter: teacher.timeCredits,
-    reason: `Taught ${session.teachSkill}`,
+    reason: `Taught ${claimed.teachSkill}`,
     session: sessionId,
-    swapRequest: session.swapRequest
+    swapRequest: claimed.swapRequest
   });
 
-  if (learner.timeCredits < LEARNER_SPEND) {
-    // Allow negative? No — floor at 0, but still record. Future: require pre-pay.
-  }
   learner.timeCredits = Math.max(0, learner.timeCredits - LEARNER_SPEND);
   learner.sessionsAttended += 1;
   await learner.save();
@@ -41,12 +42,10 @@ export async function settleCredits(session) {
     type: 'session_spent_learn',
     amount: -LEARNER_SPEND,
     balanceAfter: learner.timeCredits,
-    reason: `Learned ${session.learnSkill}`,
+    reason: `Learned ${claimed.learnSkill}`,
     session: sessionId,
-    swapRequest: session.swapRequest
+    swapRequest: claimed.swapRequest
   });
 
-  session.creditSettled = true;
-  await session.save();
   return true;
 }

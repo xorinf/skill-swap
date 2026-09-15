@@ -53,12 +53,18 @@ export default function Onboarding() {
     if (file.size > 5 * 1024 * 1024) { toast.error('Max 5 MB'); return; }
     setPhotoBusy(true);
     try {
+      // Signed direct upload to Cloudinary — same flow as Conversation.jsx attachments.
+      const sig = await api.post('/uploads/signature', { folder: 'skillswap/avatars', resourceType: 'image' });
       const fd = new FormData();
       fd.append('file', file);
-      const r = await fetch('/api/uploads/upload', { method: 'POST', body: fd, credentials: 'include' });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || 'Upload failed');
-      await api.post('/users/me/photo', { publicId: data.data.publicId, url: data.data.url });
+      fd.append('api_key', sig.apiKey);
+      fd.append('timestamp', String(sig.timestamp));
+      fd.append('signature', sig.signature);
+      fd.append('folder', sig.folder);
+      const up = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, { method: 'POST', body: fd });
+      const upData = await up.json();
+      if (!up.ok) throw new Error(upData.error?.message || 'Upload failed');
+      await api.post('/users/me/photo', { publicId: upData.public_id, url: upData.secure_url });
       await refresh();
       toast.success('Photo saved');
     } catch (err) { toast.error(err.message); }
