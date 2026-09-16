@@ -96,32 +96,26 @@ export default function Conversation() {
     const file = e.target.files?.[0];
     if (!file || !id) return;
     try {
-      // Decide resource type from mime — Cloudinary has separate upload endpoints per kind.
-      const isImage = file.type.startsWith('image/');
-      const resourceType = isImage ? 'image' : 'raw';
-      // 1) Get a signed-upload signature from our backend.
-      const sig = await api.post('/uploads/signature', { folder: 'skillswap/chat', resourceType });
-      // 2) Upload directly to Cloudinary.
+      // Backend-mediated upload — works even if the Cloudinary account's
+      // email isn't verified (direct browser uploads get blocked then).
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('api_key', sig.apiKey);
-      fd.append('timestamp', String(sig.timestamp));
-      fd.append('signature', sig.signature);
-      fd.append('folder', sig.folder);
-      const up = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/${resourceType}/upload`, {
-        method: 'POST', body: fd
+      const token = localStorage.getItem('skillswap.token') || '';
+      const up = await fetch(`${import.meta.env.VITE_API_URL}/uploads/upload`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const upData = await up.json();
       if (!up.ok) throw new Error(upData.error?.message || 'Upload failed');
-      // 3) Persist the message with the returned attachment metadata.
+      const { url, publicId, size, mime } = upData.data || upData;
       await api.post(`/messages/${id}/messages`, {
         attachment: {
-          url: upData.secure_url,
-          publicId: upData.public_id,
-          type: isImage ? 'image' : 'file',
+          url, publicId,
+          type: 'image',
           name: file.name,
-          size: upData.bytes,
-          mime: file.type,
+          size, mime: file.type,
         }
       });
       loadMessages(id);
