@@ -1,0 +1,9 @@
+{
+  "name": "skill-swap-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "install:all": "cd frontend && npm install"
+  }
+}
