@@ -13,7 +13,7 @@ const DEPARTMENTS = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI&ML', 'Data 
 
 export default function Onboarding() {
   const api = useApi();
-  const { user, bootstrapped, refresh } = useAuth();
+  const { user, bootstrapped, refresh, token: authToken } = useAuth();
   const nav = useNavigate();
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -54,9 +54,11 @@ export default function Onboarding() {
     setPhotoBusy(true);
     try {
       // Backend-mediated upload — works even if Cloudinary account email isn't verified.
+      // Read token from AuthContext first, fall back to localStorage for edge cases
+      // (e.g. hot-reload cleared state, or localStorage was written by a different tab).
       const fd = new FormData();
       fd.append('file', file);
-      const token = localStorage.getItem('skillswap.token') || '';
+      const token = authToken || localStorage.getItem('skillswap.token') || '';
       const up = await fetch(`${import.meta.env.VITE_API_URL}/uploads/upload`, {
         method: 'POST', body: fd, credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
