@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import Shell from './components/Shell.jsx';
 import PageErrorBoundary from './components/PageErrorBoundary.jsx';
 import { useAuth } from './state/AuthContext.jsx';
+import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Home from './pages/Home.jsx';
@@ -38,10 +39,17 @@ function Protected({ children }) {
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/welcome" replace />;
   // ponytail: skip if user has at least one skill. We don't block forever — just nudge on first visit.
   const hasSkills = (user.skillsCanTeach?.length || 0) + (user.skillsToLearn?.length || 0) > 0;
   if (!hasSkills) return <Navigate to="/onboarding" replace />;
+  return children;
+}
+
+// Public-only routes: redirect to the app shell if already signed in.
+function PublicOnly({ children }) {
+  const { user, bootstrapped } = useAuth();
+  if (bootstrapped && user) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -58,8 +66,10 @@ function RoutedShell() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Public marketing landing */}
+      <Route path="/welcome" element={<PublicOnly><Landing /></PublicOnly>} />
+      <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
+      <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<Protected><RoutedShell /></Protected>}>
         <Route path="/" element={<Home />} />

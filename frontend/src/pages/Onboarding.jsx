@@ -104,20 +104,22 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-ink-50">
       <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4 py-8">
-        <header className="mb-6 flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-ink-900 text-ink-50">
-            <Sparkles className="h-4 w-4" />
+        <header className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-ink-900 text-ink-50">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold tracking-tight">Set up your Skill Swap profile</div>
+              <div className="text-xs text-ink-500">{user?.email}</div>
+            </div>
           </div>
-          <div className="flex-1">
-            <div className="text-sm font-semibold">Set up your Skill Swap profile</div>
-            <div className="muted text-xs">{user?.email}</div>
-          </div>
-          <button onClick={() => finish(true)} className="text-xs muted hover:text-ink-900">Skip for now</button>
+          <button onClick={() => finish(true)} className="text-xs text-ink-500 hover:text-ink-900">Skip for now</button>
         </header>
 
         <ProgressBar step={step} />
 
-        <main className="card mt-4 flex-1 space-y-5">
+        <main className="card mt-6 flex-1 space-y-6">
           {step === 0 && (
             <ProfileStep
               form={form} setForm={setForm}
@@ -137,7 +139,7 @@ export default function Onboarding() {
           )}
         </main>
 
-        <footer className="mt-4 flex items-center justify-between">
+        <footer className="sticky bottom-0 -mx-4 mt-6 flex items-center justify-between gap-3 border-t border-ink-200 bg-ink-50/95 px-4 py-3 backdrop-blur">
           <button
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0 || busy}
@@ -145,7 +147,7 @@ export default function Onboarding() {
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
-          <div className="muted text-xs">Step {step + 1} of 3</div>
+          <div className="text-xs text-ink-500">Step {step + 1} of 3</div>
           {step < 2 ? (
             <button onClick={() => setStep((s) => Math.min(2, s + 1))} className="btn-primary" disabled={busy}>
               Next <ArrowRight className="h-4 w-4" />
